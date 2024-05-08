@@ -1,0 +1,1 @@
+docker run --name postgresdb  --hostname postgresdb -p 5432:5432 -d -it --network hadoop postgre:1

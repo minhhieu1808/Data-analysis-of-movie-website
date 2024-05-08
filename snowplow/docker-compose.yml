@@ -1,0 +1,77 @@
+services:
+  iglu-server:
+    image: snowplow/iglu-server:0.10.0
+    container_name: iglu-server
+    # restart: always
+    ports:
+      - 8181:8181
+    depends_on:
+      - postgresdb
+    environment:
+      IGLU_SUPER_API_KEY: ${IGLU_SUPER_API_KEY:-bb7b7503-40d3-459c-943a-f8d31a6f5638}
+      IGLU_DB_PASSWORD: ${IGLU_DB_PASSWORD:-snowplow}
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.12
+    volumes:
+      - $PWD/iglu/config.hocon:/iglu/config.hocon
+    command: --config /iglu/config.hocon 
+
+  collector:
+    image: snowplow/scala-stream-collector-kafka:2.9.0
+    container_name: collector
+    # restart: always
+    ports:
+      - 8080:8080
+   # depends_on:
+    #  - kafka1
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.13
+    volumes:
+      - $PWD/collector/config.hocon:/snowplow/config.hocon
+    command: --config /snowplow/config.hocon
+
+  postgresdb:
+    build: ./postgres
+    container_name: postgresdb
+    # restart: always
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_DB: igludb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${IGLU_DB_PASSWORD:-snowplow}
+    volumes:
+      - $PWD/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.14
+  enrich:
+    image: snowplow/snowplow-enrich-kafka:3.8.0
+    container_name: enrich
+    depends_on:
+      - iglu-server
+      - collector
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.15
+    volumes:
+      - $PWD/enrich:/snowplow
+    command:
+      --enrichments /snowplow/enrichments
+      --iglu-config /snowplow/resolver.json
+      --config /snowplow/config.hocon
+networks:
+    hadoop:
+        name: custom_network
+        driver: bridge
+        ipam:
+          driver: default
+          config:
+            - subnet: 172.25.0.0/16

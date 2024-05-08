@@ -1,35 +1,128 @@
 services:
-  namenode:
-    image: hadoop:1
-    container_name: hadoop-master   # = host name = core-site 
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:latest
+    # restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - 10000:10000 
-      - 8088:8088    # ui yarn
-      - 4040:4040   # ui spark 
-      - 9870:9870   # ui name node  
-    tty: true
+      - 2181:2181
     networks:
-        cluster-hadoop:
-          ipv4_address: 172.25.0.2
-
-  datanode1:
-    image: hadoop:1
-    container_name: hadoop-slave1   # phai tuong ung voi file worker ben trong 
-    tty: true
+      hadoop:
+        ipv4_address: 172.25.0.9
+  kafka1:
+    container_name: kafka1
+    image: confluentinc/cp-kafka:latest
+    # restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+      - 9092:9092
     networks:
-        cluster-hadoop:
-          ipv4_address: 172.25.0.3
+      hadoop: 
+        ipv4_address: 172.25.0.10
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 192.168.233.209:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.233.209:9092,PLAINTEXT_HOST://192.168.233.209:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
 
-  datanode2:
-    image: hadoop:1
-    container_name: hadoop-slave2 
-    tty: true
+  kafka2:
+    container_name: kafka2
+    image: confluentinc/cp-kafka:latest
+    # restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - 29093:29093
+      - 9093:9093
     networks:
-        cluster-hadoop:
-          ipv4_address: 172.25.0.4
+      hadoop: 
+        ipv4_address: 172.25.0.11
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 192.168.233.209:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.233.209:9093,PLAINTEXT_HOST://192.168.233.209:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+  iglu-server:
+    image: snowplow/iglu-server:0.10.0
+    container_name: iglu-server
+    # restart: always
+    ports:
+      - 8181:8181
+    depends_on:
+      - postgresdb
+    environment:
+      IGLU_SUPER_API_KEY: ${IGLU_SUPER_API_KEY:-bb7b7503-40d3-459c-943a-f8d31a6f5638}
+      IGLU_DB_PASSWORD: ${IGLU_DB_PASSWORD:-snowplow}
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.12
+    volumes:
+      - $PWD/snowplow/iglu/config.hocon:/iglu/config.hocon
+    command: --config /iglu/config.hocon 
 
+  collector:
+    image: snowplow/scala-stream-collector-kafka:2.9.0
+    container_name: collector
+    # restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka1
+      - kafka2
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.13
+    volumes:
+      - $PWD/snowplow/collector/config.hocon:/snowplow/config.hocon
+    command: --config /snowplow/config.hocon
+
+  postgresdb:
+    build: ./snowplow/postgres
+    container_name: postgresdb
+    # restart: always
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_DB: igludb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${IGLU_DB_PASSWORD:-snowplow}
+    volumes:
+      - $PWD/snowplow/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.14
+  enrich:
+    image: snowplow/snowplow-enrich-kafka:3.8.0
+    container_name: enrich
+    depends_on:
+      - iglu-server
+      - collector
+      - kafka1
+      - kafka2
+    networks:
+      hadoop: 
+        ipv4_address: 172.25.0.15
+    volumes:
+      - $PWD/snowplow/enrich:/snowplow
+    command:
+      --enrichments /snowplow/enrichments
+      --iglu-config /snowplow/resolver.json
+      --config /snowplow/config.hocon
 networks:
-    cluster-hadoop:
+    hadoop:
         name: custom_network
         driver: bridge
         ipam:

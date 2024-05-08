@@ -1,0 +1,14 @@
+collector {
+  interface = "0.0.0.0"
+  port = 8080
+
+   streams {
+    good = "good"
+    bad = "bad"
+
+    sink {
+      brokers = "kafka1:9092,kafka1:9092"
+    }
+  }
+}
+
