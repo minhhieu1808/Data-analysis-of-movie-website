@@ -1,0 +1,45 @@
+{
+  "$schema": "http://iglucentral.com/schemas/com.snowplowanalytics.self-desc/schema/jsonschema/1-0-0#",
+  "description": "Schema for an example event",
+  "self": {
+    "vendor": "com.example",
+    "name": "view_event",
+    "format": "jsonschema",
+    "version": "1-0-0"
+  },
+  "type": "object",
+  "properties": {
+    "isSearched": {
+      "type": "boolean"
+    },
+    "mediaId": {
+      "type": "integer"
+    },
+    "mediaTitle": {
+      "type": "string"
+    },
+    "mediaType": {
+      "type": "string"
+    },
+    "mediaPoster": {
+      "type": "string"
+    },
+    "mediaRate": {
+      "type": "number"
+    },
+    "geo_country": {
+	"type": ["string", "null"],
+	"maxLength": 2
+    },
+    "user": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "isSearched"
+  ]
+}
