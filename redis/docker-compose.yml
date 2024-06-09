@@ -3,6 +3,8 @@ services:
     image: redislabs/redisearch:latest
     ports:
        - "6379:6379"
+    volumes:
+      - $PWD/data:/data
     networks:
        hadoop: 
         ipv4_address: 172.25.0.7
