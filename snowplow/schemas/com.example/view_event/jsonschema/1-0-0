@@ -27,9 +27,11 @@
     "mediaRate": {
       "type": "number"
     },
-    "geo_country": {
-	"type": ["string", "null"],
-	"maxLength": 2
+    "mediaGenres": {
+      "type": "array",
+      "genre_name":{
+          "type": "string"
+      }
     },
     "user": {
       "type": [

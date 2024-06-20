@@ -7,7 +7,7 @@ collector {
     bad = "bad"
 
     sink {
-      brokers = "kafka1:9092,kafka1:9092"
+      brokers = "192.168.233.247:9092,192.168.233.247:9093"
     }
   }
 }

@@ -27,6 +27,12 @@
     "mediaRate": {
       "type": "number"
     },
+    "mediaGenres": {
+      "type": "array",
+      "genre_name":{
+          "type": "string"
+      }
+    },
     "user": {
       "type": [
         "string",

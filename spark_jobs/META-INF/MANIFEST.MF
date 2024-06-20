@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: Main
+Class-Path: scala-library-2.12.11.jar scala-reflect-2.12.11.jar scala-xm
+ l_2.12-1.0.6.jar
+

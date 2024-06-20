@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact name="spark_jobs:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/spark_jobs_jar</output-path>
+    <root id="root">
+      <element id="archive" name="spark_jobs.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+        </element>
+      </element>
+      <element id="library" level="application" name="scala-sdk-2.12.11" />
+    </root>
+  </artifact>
+</component>

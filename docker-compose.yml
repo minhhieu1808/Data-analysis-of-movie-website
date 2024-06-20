@@ -25,8 +25,8 @@ services:
         ipv4_address: 172.25.0.10
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 192.168.233.209:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.233.209:9092,PLAINTEXT_HOST://192.168.233.209:29092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.233.247:9092,PLAINTEXT_HOST://192.168.233.247:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
@@ -45,8 +45,8 @@ services:
         ipv4_address: 172.25.0.11
     environment:
       KAFKA_BROKER_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: 192.168.233.209:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.233.209:9093,PLAINTEXT_HOST://192.168.233.209:29093
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.233.247:9093,PLAINTEXT_HOST://192.168.233.247:29093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
@@ -121,6 +121,35 @@ services:
       --enrichments /snowplow/enrichments
       --iglu-config /snowplow/resolver.json
       --config /snowplow/config.hocon
+      
+  namenode:
+    build: ./hadoop_spark
+    container_name: hadoop-master   # = host name = core-site 
+    ports:
+      - 10000:10000 
+      - 8088:8088    # ui yarn
+      - 4040:4040   # ui spark 
+      - 9870:9870   # ui name node  
+    tty: true
+    networks:
+        hadoop:
+          ipv4_address: 172.25.0.16
+
+  datanode1:
+    build: ./hadoop_spark
+    container_name: hadoop-slave1   # phai tuong ung voi file worker ben trong 
+    tty: true
+    networks:
+        hadoop:
+          ipv4_address: 172.25.0.17
+
+  datanode2:
+    build: ./hadoop_spark
+    container_name: hadoop-slave2 
+    tty: true
+    networks:
+        hadoop:
+          ipv4_address: 172.25.0.18
 networks:
     hadoop:
         name: custom_network
