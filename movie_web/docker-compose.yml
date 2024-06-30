@@ -1,0 +1,37 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb_test
+    ports:
+      - "27017:27017"
+    networks:
+       web: 
+        ipv4_address: 172.25.0.22
+
+  frontend:
+    build: ./client
+    container_name: frontend
+    ports:
+      - 3000:3000 
+    tty: true
+    networks:
+        web:
+          ipv4_address: 172.25.0.23
+
+  backend:
+    build: ./server
+    container_name:  backend 
+    ports:
+      - 5000:5000 
+    tty: true
+    networks:
+        web:
+          ipv4_address: 172.25.0.24
+networks:
+    web:
+        name: custom_network
+        driver: bridge
+        ipam:
+          driver: default
+          config:
+            - subnet: 172.25.0.0/16
